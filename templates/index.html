@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌸 Iris Flower Classification API</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: #333;
+            animation: gradientShift 10s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0%, 100% { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+            50% { background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); }
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        
+        .card:hover::before {
+            left: 100%;
+        }
+        
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+        
+        .card p {
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .species-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .species-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .species-card:hover {
+            transform: translateY(-5px) rotate(2deg);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
+        
+        .species-card:nth-child(1) { border-top: 4px solid #48cc91; }
+        .species-card:nth-child(2) { border-top: 4px solid #4299e1; }
+        .species-card:nth-child(3) { border-top: 4px solid #ed64a6; }
+        
+        .species-card h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .emoji {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            transition: transform 0.3s ease;
+        }
+        
+        .species-card:hover .emoji {
+            transform: scale(1.2) rotate(10deg);
+        }
+        
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            opacity: 0.8;
+        }
+        
+        .prediction-form {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: scale(1.02);
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 25px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            display: none;
+            border-left: 5px solid #667eea;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .example-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌸 Iris Flower Classification</h1>
+            <p>AI-Powered Species Identification API</p>
+        </div>
+        
+        <div class="cards">
+            <div class="card">
+                <h3>🚀 Quick Start</h3>
+                <p>Get started with our interactive API documentation. Test endpoints, see examples, and learn how to integrate with your applications.</p>
+                <a href="/docs" class="btn">Open API Docs</a>
+            </div>
+            
+            <div class="card">
+                <h3>🤖 Model Info</h3>
+                <p>Learn about our machine learning model, its accuracy, training data, and the features it uses to make predictions.</p>
+                <a href="/model-info" class="btn">View Model Details</a>
+            </div>
+            
+            <div class="card">
+                <h3>📚 Species Guide</h3>
+                <p>Discover the characteristics of each iris species and learn how to identify them based on their measurements.</p>
+                <a href="/species-info" class="btn">Species Guide</a>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>🌺 About Iris Species</h3>
+            <p>Our AI can identify three beautiful iris species based on flower measurements:</p>
+            
+            <div class="species-grid">
+                <div class="species-card">
+                    <div class="emoji">🌸</div>
+                    <h4>Iris Setosa</h4>
+                    <p>Small, delicate flowers with short petals and wide sepals</p>
+                </div>
+                
+                <div class="species-card">
+                    <div class="emoji">🌼</div>
+                    <h4>Iris Versicolor</h4>
+                    <p>Medium-sized flowers with balanced proportions</p>
+                </div>
+                
+                <div class="species-card">
+                    <div class="emoji">🌺</div>
+                    <h4>Iris Virginica</h4>
+                    <p>Large, elegant flowers with long petals</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="prediction-form">
+            <h3>🔮 Try a Prediction</h3>
+            <p>Enter flower measurements to see our AI in action:</p>
+            
+            <!-- Example buttons -->
+            <div style="margin-bottom: 25px; text-align: center;">
+                <p style="margin-bottom: 15px; color: #4a5568;"><strong>🎯 Try these examples:</strong></p>
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <button class="example-btn" onclick="loadExample('setosa')" style="background: #48cc91; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 0.9rem; transition: all 0.3s ease;">
+                        🌸 Setosa
+                    </button>
+                    <button class="example-btn" onclick="loadExample('versicolor')" style="background: #4299e1; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 0.9rem; transition: all 0.3s ease;">
+                        🌿 Versicolor
+                    </button>
+                    <button class="example-btn" onclick="loadExample('virginica')" style="background: #ed64a6; color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 0.9rem; transition: all 0.3s ease;">
+                        🌺 Virginica
+                    </button>
+                </div>
+            </div>
+
+            <form id="predictionForm">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label for="sepal_length">🌿 Sepal Length (cm)</label>
+                        <input type="number" id="sepal_length" step="0.1" min="0" max="10" value="5.1" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="sepal_width">🌿 Sepal Width (cm)</label>
+                        <input type="number" id="sepal_width" step="0.1" min="0" max="10" value="3.5" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="petal_length">🌸 Petal Length (cm)</label>
+                        <input type="number" id="petal_length" step="0.1" min="0" max="10" value="1.4" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="petal_width">🌸 Petal Width (cm)</label>
+                        <input type="number" id="petal_width" step="0.1" min="0" max="10" value="0.2" required>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 25px;">
+                    <button type="submit" class="btn" style="font-size: 1.1rem; padding: 15px 30px;">🔮 Predict Species</button>
+                </div>
+            </form>
+            
+            <div id="result" class="result"></div>
+        </div>
+        
+        <div class="footer">
+            <p>Built with ❤️ using FastAPI and scikit-learn</p>
+            <p>🎯 Achieving 96.7% accuracy on the Iris dataset</p>
+        </div>
+    </div>
+    
+    <script>
+        // Example data for each species
+        const examples = {
+            setosa: { sepal_length: 5.1, sepal_width: 3.5, petal_length: 1.4, petal_width: 0.2 },
+            versicolor: { sepal_length: 6.2, sepal_width: 2.9, petal_length: 4.3, petal_width: 1.3 },
+            virginica: { sepal_length: 6.3, sepal_width: 3.3, petal_length: 6.0, petal_width: 2.5 }
+        };
+        
+        // Load example data into form
+        function loadExample(species) {
+            const example = examples[species];
+            document.getElementById('sepal_length').value = example.sepal_length;
+            document.getElementById('sepal_width').value = example.sepal_width;
+            document.getElementById('petal_length').value = example.petal_length;
+            document.getElementById('petal_width').value = example.petal_width;
+            
+            // Add visual feedback
+            const inputs = document.querySelectorAll('.form-group input');
+            inputs.forEach(input => {
+                input.style.borderColor = '#48cc91';
+                setTimeout(() => {
+                    input.style.borderColor = '#e1e5e9';
+                }, 1000);
+            });
+        }
+        
+        // Form submission handler
+        document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            // Show loading state
+            submitBtn.innerHTML = '<span class="loading"></span> Predicting...';
+            submitBtn.disabled = true;
+            
+            const formData = {
+                sepal_length: parseFloat(document.getElementById('sepal_length').value),
+                sepal_width: parseFloat(document.getElementById('sepal_width').value),
+                petal_length: parseFloat(document.getElementById('petal_length').value),
+                petal_width: parseFloat(document.getElementById('petal_width').value)
+            };
+            
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    const resultDiv = document.getElementById('result');
+                    
+                    // Get species color
+                    const speciesColors = {
+                        setosa: '#48cc91',
+                        versicolor: '#4299e1', 
+                        virginica: '#ed64a6'
+                    };
+                    const speciesColor = speciesColors[result.species] || '#667eea';
+                    
+                    resultDiv.innerHTML = `
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <h3 style="color: ${speciesColor}; margin: 0;">🎉 Prediction Complete!</h3>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                            <div style="background: white; padding: 20px; border-radius: 10px; text-align: center; border-top: 4px solid ${speciesColor};">
+                                <h4 style="color: ${speciesColor}; margin: 0 0 10px 0;">🏷️ Species</h4>
+                                <p style="font-size: 1.5rem; font-weight: bold; margin: 0; color: #2d3748;">${result.species.toUpperCase()}</p>
+                            </div>
+                            
+                            <div style="background: white; padding: 20px; border-radius: 10px; text-align: center; border-top: 4px solid ${speciesColor};">
+                                <h4 style="color: ${speciesColor}; margin: 0 0 10px 0;">🎯 Confidence</h4>
+                                <p style="font-size: 1.5rem; font-weight: bold; margin: 0; color: #2d3748;">${result.confidence_percentage}</p>
+                            </div>
+                        </div>
+                        
+                        <div style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 15px;">
+                            <h4 style="color: #2d3748; margin: 0 0 10px 0;">💭 AI Interpretation</h4>
+                            <p style="margin: 0; color: #4a5568; font-style: italic;">${result.interpretation}</p>
+                        </div>
+                        
+                        <div style="background: white; padding: 20px; border-radius: 10px;">
+                            <h4 style="color: #2d3748; margin: 0 0 15px 0;">📊 All Species Probabilities</h4>
+                            ${Object.entries(result.probabilities).map(([species, prob]) => {
+                                const color = speciesColors[species] || '#667eea';
+                                const percentage = (prob * 100).toFixed(1);
+                                return `
+                                    <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                                        <span style="width: 100px; font-weight: 600; color: ${color};">${species}:</span>
+                                        <div style="flex: 1; background: #f1f5f9; border-radius: 10px; height: 20px; margin: 0 10px; overflow: hidden;">
+                                            <div style="background: ${color}; height: 100%; width: ${percentage}%; border-radius: 10px; transition: width 0.5s ease;"></div>
+                                        </div>
+                                        <span style="font-weight: bold; color: #2d3748;">${percentage}%</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    `;
+                    resultDiv.style.display = 'block';
+                    resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else {
+                    throw new Error(result.detail || 'Prediction failed');
+                }
+            } catch (error) {
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = `
+                    <div style="text-align: center; color: #f56565;">
+                        <h4>❌ Prediction Error</h4>
+                        <p>${error.message}</p>
+                        <p style="font-size: 0.9rem; color: #718096;">Please check your input values and try again.</p>
+                    </div>
+                `;
+                resultDiv.style.display = 'block';
+            } finally {
+                // Reset button
+                setTimeout(() => {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }, 500);
+            }
+        });
+        
+        // Add some interactive effects
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate cards on scroll
+            const cards = document.querySelectorAll('.card, .species-card');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            });
+            
+            cards.forEach(card => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                observer.observe(card);
+            });
+        });
+    </script>
+</body>
+</html>
